@@ -16,7 +16,7 @@ string oAuthTokenUrl = "https://id.twitch.tv/oauth2/token";
 string oAuthAccessTokenUrl = "https://id.twitch.tv/oauth2/authorize";
 string redirectUri = config["uri:redirect"];
 
-string streamerLogin = null;
+string? streamerLogin = null;
 
 // Use just one example! In example client credentials the api call for clips won't work (line 111-124).
 
@@ -27,7 +27,7 @@ string streamerLogin = null;
 // --------------------------------------
 
 // var client = new RestClient(oAuthTokenUrl);
-// var request = new RestRequest(oAuthTokenUrl, Method.Post);
+// var request = new RestRequest("", Method.Post);
 // request.AddHeader("content-type", "application/x-www-form-urlencoded");
 // request.AddParameter("grant_type", "client_credentials").AddParameter("client_id", oAuthClientId).AddParameter("client_secret", oAuthClientSecret);
 // RestResponse response = client.Execute(request);
@@ -46,16 +46,23 @@ string streamerLogin = null;
 // 
 // --------------------------------------
 var client0 = new RestClient(oAuthAccessTokenUrl);
-var request0 = new RestRequest(oAuthAccessTokenUrl);
+var request0 = new RestRequest();
 request0.AddParameter("response_type", "code").AddParameter("client_id", oAuthClientId).AddParameter("redirect_uri", redirectUri).AddParameter("scope", "user:read:email");
 RestResponse response0 = await client0.ExecuteAsync(request0);
 
-Process.Start(startInfo: new ProcessStartInfo { FileName = response0.ResponseUri.OriginalString, UseShellExecute = true});
+if (response0.ResponseUri != null)
+{
+    Process.Start(startInfo: new ProcessStartInfo { FileName = response0.ResponseUri.OriginalString, UseShellExecute = true });
+} else
+{
+    throw new Exception("Redirect to twitch failed!");
+}
+
 
 HttpListener listener = new HttpListener();
 listener.Prefixes.Add(redirectUri + "/");
 listener.Start();
-var code = "";
+var authorizationCode = "";
 
 var resultForCode = listener.BeginGetContext(new AsyncCallback((result) =>
 {
@@ -64,20 +71,27 @@ var resultForCode = listener.BeginGetContext(new AsyncCallback((result) =>
         var context = listener.EndGetContext(result);
         var request = context.Request;
 
-        string[] queryParts = request.Url.Query.Split('=', '&');
-        code = queryParts[1];
+        if (request.Url != null)
+        {
+            string[] queryParts = request.Url.Query.Split('=', '&');
+            authorizationCode = queryParts[1];
+        } else
+        {
+            throw new Exception("No url with authorization code!");
+        }
+        
     }
 }), listener);
 
 resultForCode.AsyncWaitHandle.WaitOne();
 listener.Close();
 
-Console.WriteLine("Code: " + code);
+Console.WriteLine("Code: " + authorizationCode);
 
 var client = new RestClient(oAuthTokenUrl);
-var request = new RestRequest(oAuthTokenUrl, Method.Post);
+var request = new RestRequest("", Method.Post);
 request.AddHeader("content-type", "application/x-www-form-urlencoded");
-request.AddParameter("grant_type", "authorization_code").AddParameter("client_id", oAuthClientId).AddParameter("client_secret", oAuthClientSecret).AddParameter("code", code).AddParameter("redirect_uri", redirectUri);
+request.AddParameter("grant_type", "authorization_code").AddParameter("client_id", oAuthClientId).AddParameter("client_secret", oAuthClientSecret).AddParameter("code", authorizationCode).AddParameter("redirect_uri", redirectUri);
 RestResponse response = await client.ExecuteAsync(request);
 
 // --------------------------------------

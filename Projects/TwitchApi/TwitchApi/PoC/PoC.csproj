@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
       <UserSecretsId>a7cb5aa5-a9e2-41d1-a876-631236605e31</UserSecretsId>
@@ -25,43 +25,5 @@
       <PackageReference Include="RestSharp" Version="108.0.3" />
       <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
     </ItemGroup>
-
-    <PropertyGroup>
-        <NswagConfigFileLocation>config.nswag</NswagConfigFileLocation>
-        <TwitchOpenApiSpecLocation>Assets/twitch-api.yaml</TwitchOpenApiSpecLocation>
-        <TwitchClientClassName>Client</TwitchClientClassName>
-        <TwitchClientNamespace>TwitchApi</TwitchClientNamespace>
-        <TwitchClientOutputDirectory>Generated</TwitchClientOutputDirectory>
-    </PropertyGroup>
-
-<!--    <Target Name="ChangeHeader" BeforeTargets="generateTwitchClient" Condition=" '$(ChangeHeader)'!='false' ">-->
-<!--        <PropertyGroup>-->
-<!--            <PowerShellExe Condition=" '$(PowerShellExe)'=='' ">-->
-<!--                %WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe-->
-<!--            </PowerShellExe>-->
-<!--            <ScriptLocation Condition=" '$(ScriptLocation)'=='' ">-->
-<!--                %CD%\Assets\correct-header-in-yaml-file.ps1-->
-<!--            </ScriptLocation>-->
-<!--            <FileLocation Condition=" '$(FileLocation)'=='' ">-->
-<!--                %CD%\Assets\original.yaml-->
-<!--            </FileLocation>-->
-<!--        </PropertyGroup>-->
-<!--        <Exec Command="$(PowerShellExe) -NonInteractive -executionpolicy Unrestricted-->
-<!--                 -command &quot; { -->
-<!--                          &amp;&apos;$(ScriptLocation)&apos; -->
-<!--                          &apos;$(FileLocation)&apos; } &quot;" />-->
-<!--    </Target>-->
-
-
-    <Target Name="generateTwitchClient" BeforeTargets="CoreCompile" Inputs="$(NswagConfigFileLocation)" Outputs="$(TwitchClientOutputDirectory)\$(TwitchClientClassName).cs">
-<!--        <Exec Command="$(NSwagExe) openapi2csclient /input:$(TwitchOpenApiSpecLocation)  /classname:$(TwitchClientClassName) /namespace:$(TwitchClientNamespace) /output:$(TwitchClientOutputDirectory)\$(TwitchClientClassName).cs" ConsoleToMSBuild="true">-->
-        <Exec Command="$(NSwagExe_Net70) run /runtime:Net70 /input:$(NswagConfigFileLocation) /variables:Configuration=$(Configuration)" ConsoleToMSBuild="true">
-            <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-        </Exec>
-    </Target>
-    
-    <Target Name="forceReGenerationOnRebuild" AfterTargets="CoreClean">
-        <Delete Files="$(TwitchClientOutputDirectory)\$(TwitchClientClassName).cs" />
-    </Target>
 
 </Project>
