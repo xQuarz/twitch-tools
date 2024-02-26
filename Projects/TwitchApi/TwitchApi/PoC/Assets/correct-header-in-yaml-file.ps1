@@ -1,20 +1,8 @@
-function correct_header
+function ReplaceStringInYamlFile
 {
-    param([string]$filepath)
-    $toFind = "client_id"
-    $replacement = "Client-Id"
-    (Get-Content $filepath).Replace($toFind, $replacement) | Set-Content $filepath
-}
-
-
-function add_nullable_to_get_clips_response_vod_offset
-{
-    param([string]$filepath)
-    $regex = '(?<=vod_offset:\s+?type:\s)number'
-    $replacement = "`r`n                            - number`r`n                            - 'null'"
+    param([string]$filepath, [string]$toFind, [string]$toReplace)
     $content = Get-Content $filepath -Raw -Encoding utf8bom
-    $changedType = $content -Replace $regex, $replacement | Set-Content $filepath
-    $changedType -Replace "(?s)\r\n*$" 
+    $content -Replace $toFind, $toReplace | Set-Content $filepath
 }
 
 $filepath = $args[0]
@@ -23,5 +11,15 @@ if (!$args[0])
     $filepath = "twitch-api.yaml"
 }
 
-correct_header $filepath
-add_nullable_to_get_clips_response_vod_offset $filepath
+# Update openapi version from 3.0.0 to 3.1.0
+ReplaceStringInYamlFile $filepath '(?<=openapi:\s)3.0.0' '3.1.0'
+
+# Replace client_id with Client-Id
+ReplaceStringInYamlFile $filepath "client_id" "Client-Id"
+
+# Add missing nullable to type from vod offset
+ReplaceStringInYamlFile $filepath '(?<=vod_offset:\s+?type:\s)number' "`r`n                            - number`r`n                            - 'null'"
+
+
+# Remove whitespace at end of file
+ReplaceStringInYamlFile $filepath '\s+?$' ''
